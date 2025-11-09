@@ -70,9 +70,6 @@ python main_app.py
 ## 🔧 项目结构
 
 ```
-├── .github/            # GitHub配置目录
-│   └── workflows/      # GitHub Actions工作流配置
-│       └── python-app.yml  # CI/CD配置文件
 ├── docs/               # 文档目录
 │   └── technical_documentation.md  # 技术原理文档
 ├── src/                # 源代码目录
