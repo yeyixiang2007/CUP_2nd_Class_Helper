@@ -46,6 +46,32 @@ pip install -r requirements.txt
 python main_app.py
 ```
 
+## 🏗️ 项目打包
+
+项目提供了完整的打包脚本，可以将应用程序打包为单一可执行文件(.exe)，方便分发和使用。
+
+### 打包步骤
+
+```bash
+# 确保安装了PyInstaller（脚本会自动检查并安装）
+python build.py
+```
+
+### 打包脚本功能
+
+- 自动检查并安装必要的依赖
+- 清理之前的构建文件
+- 使用PyInstaller创建单一可执行文件
+- 添加应用图标和版本信息
+- 验证构建结果
+- 自动将可执行文件和相关文档压缩为ZIP包
+
+### 打包结果
+
+- 打包后的可执行文件位于 `dist` 目录下
+- 压缩包包含可执行文件、README.md、LICENSE和requirements.txt文件
+- 压缩包名称包含版本号和时间戳，便于识别
+
 ## 📖 使用指南
 
 ### 登录
@@ -78,6 +104,8 @@ python main_app.py
 ```
 ├── docs/               # 文档目录
 │   └── technical_documentation.md  # 技术原理文档
+├── res/                # 资源目录
+│   └── logo.ico         # 应用图标
 ├── src/                # 源代码目录
 │   ├── activity_fetcher.py  # 活动数据获取模块
 │   ├── config.py           # 配置文件
@@ -85,9 +113,11 @@ python main_app.py
 │   ├── network_client.py   # 网络请求模块
 │   └── ui_manager.py       # UI管理模块
 ├── main_app.py         # 主应用程序入口
+├── build.py            # 应用打包脚本
 ├── requirements.txt    # 项目依赖
 ├── LICENSE             # 开源许可证
 ├── README.md           # 项目说明文档
+├── .gitattributes      # Git属性文件
 └── .gitignore          # Git忽略文件
 ```
 
