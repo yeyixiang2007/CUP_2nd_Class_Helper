@@ -5,30 +5,45 @@ from tkinter import ttk, messagebox
 from typing import List, Dict, Any
 
 class UIManager:
+    """
+    UI管理器类，负责管理和更新应用程序的用户界面组件。
+    """
+
     def __init__(self, root, tree):
+        """
+        初始化UI管理器。
+
+        Args:
+            root: 主窗口实例
+            tree: Treeview表格实例
+        """
         self.root = root
         self.tree = tree
         self._setup_tree_tags()
 
     def _setup_tree_tags(self):
         """
-        设置Treeview的标签样式
+        设置Treeview的标签样式。
+        定义不同活动状态对应的颜色标签。
         """
         # 定义三种行颜色标签
-        self.tree.tag_configure("Completed", background="light green", foreground="black")
-        self.tree.tag_configure("Incomplete", background="#FFC0CB", foreground="black") # 浅粉色
+        self.tree.tag_configure("Completed", background="light green", foreground="black") # 已完成活动
+        self.tree.tag_configure("Incomplete", background="#FFC0CB", foreground="black") # 未完成活动（浅粉色）
         self.tree.tag_configure("Unknown", foreground="gray") # 默认/未加载详情
 
     def update_status(self, message):
         """
-        更新状态栏消息
+        更新状态栏消息。
+
+        Args:
+            message: 要显示的状态消息
         """
         if hasattr(self.root, 'status_var'):
             self.root.status_var.set(message)
 
     def disable_buttons(self):
         """
-        禁用相关按钮
+        禁用相关按钮，防止用户在操作进行中重复点击。
         """
         if hasattr(self.root, 'fetch_button'):
             self.root.fetch_button.config(state="disabled")
@@ -37,7 +52,11 @@ class UIManager:
 
     def enable_buttons(self, enable_fetch=True, enable_login=False):
         """
-        启用相关按钮
+        启用相关按钮。
+
+        Args:
+            enable_fetch: 是否启用获取按钮
+            enable_login: 是否启用登录按钮
         """
         if enable_fetch and hasattr(self.root, 'fetch_button'):
             self.root.fetch_button.config(state="normal")
@@ -46,7 +65,10 @@ class UIManager:
 
     def update_tree(self, activity_data_cache: List[Dict[str, Any]]):
         """
-        更新Treeview表格，根据完成状态应用颜色标签
+        更新Treeview表格，根据完成状态应用颜色标签。
+
+        Args:
+            activity_data_cache: 活动数据列表
         """
         self.clear_tree()
 

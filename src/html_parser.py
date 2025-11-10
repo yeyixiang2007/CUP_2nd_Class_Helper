@@ -7,7 +7,13 @@ from datetime import datetime
 
 def parse_execution(html_content: str) -> str | None:
     """
-    Parses the login page HTML to find the 'execution' token.
+    解析登录页面HTML，提取'execution'令牌。
+
+    Args:
+        html_content: 登录页面的HTML内容
+
+    Returns:
+        str: execution令牌值，如果未找到则返回None
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     execution_input = soup.find('input', {'name': 'execution'})
@@ -17,7 +23,13 @@ def parse_execution(html_content: str) -> str | None:
 
 def parse_student_name(html_content: str) -> str | None:
     """
-    Parses the student name from the HTML content.
+    从HTML内容中解析学生姓名。
+
+    Args:
+        html_content: 包含学生信息的HTML内容
+
+    Returns:
+        str: 学生姓名，如果未找到则返回None
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     name_div = soup.select_one('div.name')
@@ -39,11 +51,15 @@ def parse_student_name(html_content: str) -> str | None:
 
 def parse_activity_list(html_content: str) -> list[dict]:
     """
-    Parses the "My Page" HTML to find the list of registered activities.
+    解析"我的页面"HTML，提取已报名活动列表。
 
-    返回的每个字典包含：
-    - 'name': 活动名称
-    - 'url': 活动详情页面的相对 URL (包含id和actid)
+    Args:
+        html_content: 我的页面的HTML内容
+
+    Returns:
+        list[dict]: 活动列表，每个字典包含：
+            - 'name': 活动名称
+            - 'url': 活动详情页面的相对 URL (包含id和actid)
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     activities = []
@@ -62,8 +78,8 @@ def parse_activity_list(html_content: str) -> list[dict]:
 
 def parse_activity_detail(json_data: Dict[str, Any]) -> dict:
     """
-    Parses the activity detail JSON data to extract key information.
-    The input json_data is the 'data' field from the API response.
+    解析活动详情JSON数据，提取关键信息。
+    输入的json_data是API响应中的'data'字段。
 
     返回的字典包含：
     - 'time': 活动时间 (格式化)
@@ -77,8 +93,11 @@ def parse_activity_detail(json_data: Dict[str, Any]) -> dict:
     activity = json_data.get('Activity', {})
     member = json_data.get('enterMember', {})
 
-    # Helper to convert Unix timestamp string/int to YYYY-MM-DD HH:MM
     def format_timestamp(ts):
+        """
+        格式化时间戳为 'YYYY-MM-DD HH:MM' 格式。
+        如果输入无效或为空，返回 'N/A'。
+        """
         try:
             ts = int(ts)
             if ts > 0:
@@ -88,43 +107,32 @@ def parse_activity_detail(json_data: Dict[str, Any]) -> dict:
             pass
         return 'N/A'
 
-    # Extract Activity Time
     acttime_ts = activity.get('acttime')
     time_str = format_timestamp(acttime_ts)
-    # MODIFICATION: Save the timestamp for sorting. Use 0 if N/A.
     acttime_timestamp = int(acttime_ts) if acttime_ts and str(acttime_ts).isdigit() else 0
 
-    # Extract Duration
     duration_str = f"{activity.get('expectedtime', 'N/A')} 小时"
-
-    # Extract Points
     points_str = str(activity.get('isopennum', '0'))
 
-    # Extract Tags
     tags = [
         activity.get('classificationtitle', ''),
         activity.get('categorytitle', '')
     ]
-    # Check if report is required (issubmitwork: "1")
     if activity.get('issubmitwork') == '1':
         tags.append('需报告')
-
-    # Filter out empty strings and join with a pipe for clarity
     tags_str = ' | '.join([t.strip() for t in tags if t])
 
-    # Extract Sign-in/Sign-out status (MODIFICATION: No time displayed)
     signin_status = '未签到'
     signout_status = '未签退'
 
     if member.get('signin') == '1':
         signin_status = '已签到'
-
     if member.get('signout') == '1':
         signout_status = '已签退'
 
     return {
         'time': time_str,
-        'acttime_timestamp': acttime_timestamp, # 新增字段用于排序
+        'acttime_timestamp': acttime_timestamp,
         'duration': duration_str,
         'points': points_str,
         'tags': tags_str,
@@ -135,7 +143,13 @@ def parse_activity_detail(json_data: Dict[str, Any]) -> dict:
 # 增加一个基本信息解析函数，用于未获取详情的活动
 def parse_basic_activity_info(activity_data: dict) -> dict:
     """
-    Return basic info for activities that haven't fetched full details.
+    从活动详情数据中提取基本信息。
+
+    Args:
+        activity_data: 活动详情数据字典
+
+    Returns:
+        dict: 包含活动基本信息的字典
     """
     return {
         'name': activity_data['name'],

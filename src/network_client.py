@@ -9,30 +9,47 @@ from typing import Tuple, Dict, Any
 from urllib.parse import urlparse, parse_qs
 
 class ApiClient:
-    # ... (init, login, get_activity_list methods remain the same)
+    """
+    API客户端类，处理与第二课堂系统的网络交互。
+    负责登录、获取活动列表和活动详情等功能。
+    """
 
     def __init__(self):
+        """
+        初始化ApiClient实例。
+        设置会话、请求头，并初始化登录状态。
+        """
         self.session = requests.Session()
         self.session.headers.update(config.BASE_HEADERS)
         self.logged_in = False
         self.student_name = None  # 保存学生姓名
 
     def login(self, username: str, password: str) -> Tuple[bool, str]:
+        """
+        用户登录函数。
+
+        Args:
+            username: 用户名（学号）
+            password: 密码
+
+        Returns:
+            Tuple[bool, str]: (登录是否成功, 消息)
+        """
         print(f"{Fore.YELLOW}{Style.BRIGHT}正在登录: {username}")
         try:
-            # Step 0: GET login page to get execution token
+            # 获取登录页面以获取execution令牌
             login_page_resp = self.session.get(
                 config.LOGIN_URL,
                 params={'service': config.SERVICE_URL}
             )
             login_page_resp.raise_for_status()
 
-            # Parse execution token from HTML
+            # 从HTML中解析execution令牌
             execution = html_parser.parse_execution(login_page_resp.text)
             if not execution:
-                return False, "Failed to find login token (execution)."
+                return False, "未找到登录令牌(execution)。"
 
-            # Step 1: POST login data
+            # 提交登录表单
             payload = {
                 'username': username,
                 'password': password,
@@ -42,7 +59,6 @@ class ApiClient:
                 '_eventId': 'submit'
             }
 
-            # Step 2: POST login data
             login_resp = self.session.post(
                 config.LOGIN_URL,
                 params={'service': config.SERVICE_URL},
@@ -62,11 +78,20 @@ class ApiClient:
             return False, f"Network error during login: {e}"
 
     def get_activity_list(self) -> str:
+        """
+        获取活动列表页面HTML。
+
+        Returns:
+            str: 活动列表页面HTML内容
+
+        Raises:
+            Exception: 当用户未登录或请求失败时抛出
+        """
         if not self.logged_in:
-            raise Exception("User is not logged in.")
+            raise Exception("用户未登录。")
 
         try:
-            # Step 3: Access the activity list page
+            # 访问活动列表页面
             resp = self.session.get(config.ACTIVITY_LIST_URL)
             resp.raise_for_status()
 
@@ -74,58 +99,69 @@ class ApiClient:
             name = html_parser.parse_student_name(html_content)
             if name:
                 self.student_name = name
-                print(f"{Fore.YELLOW}{Style.BRIGHT}登录学生姓名: {self.student_name}")
+                print(f"{Fore.YELLOW}{Style.BRIGHT}登录学生: {self.student_name}")
 
             return html_content
         except requests.RequestException as e:
-            raise Exception(f"Failed to fetch activity list: {e}")
+            raise Exception(f"获取活动列表失败: {e}")
 
     def get_student_name(self) -> str | None:
         """
-        获取已保存的学生姓名
+        获取学生姓名。
+
+        Returns:
+            str: 学生姓名，如果未获取则返回None
         """
         return self.student_name
 
     def get_activity_detail(self, detail_url: str) -> Dict[str, Any]:
         """
-        Fetches the activity details directly from the API.
+        获取单个活动的详细信息。
+
+        Args:
+            detail_url: 活动详情页面的URL
+
+        Returns:
+            Dict[str, Any]: 包含活动详情的字典
+
+        Raises:
+            Exception: 当用户未登录或请求失败时抛出
         """
         if not self.logged_in:
-            raise Exception("User is not logged in.")
+            raise Exception("用户未登录。")
 
         try:
-            # Extract id and actid from the detail_url
+            # 从detail_url中提取id和actid参数
             parsed_url = urlparse(detail_url)
             query_params = parse_qs(parsed_url.query)
 
-            # API requires 'id' (which is enterMember ID) and 'actid'
+            # API需要'id'（即enterMember ID）和'actid'
             payload = {
                 'id': query_params.get('id', [''])[0],
                 'actid': query_params.get('actid', [''])[0]
             }
 
             if not payload['id'] or not payload['actid']:
-                raise ValueError(f"Could not extract 'id' and 'actid' from URL: {detail_url}")
+                raise ValueError(f"无法从URL中提取'id'和'actid': {detail_url}")
 
-            # Step 4: Access the detail API using POST
-            # FIX: Use the corrected ACTIVITY_DETAIL_API (now /detail)
+            # 访问详情API
             resp = self.session.post(
                 config.ACTIVITY_DETAIL_API,
-                data=payload, # Send parameters as POST data
+                data=payload,
                 headers={'Content-Type': 'application/x-www-form-urlencoded'}
             )
-            resp.raise_for_status() # This will catch the 404 error if it still exists
+            resp.raise_for_status()
 
             json_response = resp.json()
 
-            # The status '1' indicates success
+            # 状态码'1'表示成功
             if json_response.get('status') == '1':
-                return json_response.get('data', {}) # Return the 'data' payload for parser
+                return json_response.get('data', {}) # 返回'data'部分供解析器使用
             else:
-                raise Exception(f"API returned error status: {json_response.get('message', 'Unknown error')}")
+                raise Exception(f"API返回错误状态: {json_response.get('message', '未知错误')}")
 
         except requests.RequestException as e:
-            # The 'Failed to fetch activity detail via API: 404 Client Error: Not Found' error is caught here
-            raise Exception(f"Failed to fetch activity detail via API: {e}")
+            # 这里捕获'Failed to fetch activity detail via API: 404 Client Error: Not Found'错误
+            raise Exception(f"通过API获取活动详情失败: {e}")
         except Exception as e:
             raise e

@@ -3,23 +3,30 @@
 import tkinter as tk
 from tkinter import ttk
 import threading
-from src.network_client import ApiClient
-import src.config as config
 from colorama import init
 
-# 导入新模块
+import src.config as config
+from src.network_client import ApiClient
 from src.activity_fetcher import ActivityFetcher, ActivityFetcherThread
 from src.ui_manager import UIManager
 
-# Initialize colorama for cross-platform color support
 init(autoreset=True)
 
 class ActivityViewer(tk.Tk):
+    """
+    中国石油大学第二课堂活动查询助手主类
+    继承自Tkinter的Tk类，负责管理整个应用程序界面和功能
+    """
 
     def __init__(self):
+        """
+        初始化应用程序主窗口和各种组件
+        设置窗口标题、大小，初始化客户端和数据缓存等
+        """
         super().__init__()
         self.title("中国石油大学第二课堂活动查询助手")
         self.geometry("1200x700")
+        self.configure(bg='white')
 
         self.client = ApiClient()
         # 存储所有活动数据的列表，用于排序和按需加载
@@ -33,10 +40,9 @@ class ActivityViewer(tk.Tk):
 
         # 设置专业主题
         style = ttk.Style(self)
-        style.theme_use('default')
         style.configure("Treeview", rowheight=25)
 
-        # --- Login Frame ---
+        # 登录框架
         login_frame = ttk.Frame(self, padding="10")
         login_frame.pack(fill='x')
 
@@ -54,20 +60,20 @@ class ActivityViewer(tk.Tk):
         self.fetch_button = ttk.Button(login_frame, text="获取活动列表", command=self.start_data_fetch, state="disabled")
         self.fetch_button.pack(side='left', padx=5)
 
-        # --- Status Bar ---
+        # 状态标签
         self.status_var = tk.StringVar()
         self.status_var.set("请先登录")
         status_bar = ttk.Label(self, textvariable=self.status_var, relief='sunken', anchor='w', padding="5")
         status_bar.pack(side='bottom', fill='x')
 
-        # --- Treeview (Table) Frame ---
+        # 活动列表树视图
         tree_frame = ttk.Frame(self, padding="10")
         tree_frame.pack(expand=True, fill='both')
 
         columns = ('name', 'time', 'duration', 'points', 'signin', 'signout', 'tags')
         self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings')
 
-        # Define Headings and Column Widths
+        # 设置列标题和宽度
         self.tree.heading('name', text='活动名称')
         self.tree.column('name', width=300, anchor='w')
         self.tree.heading('time', text='活动时间')
@@ -83,7 +89,7 @@ class ActivityViewer(tk.Tk):
         self.tree.heading('tags', text='标签')
         self.tree.column('tags', width=200, anchor='w')
 
-        # Add Scrollbars
+        # 添加垂直和水平滚动条
         ysb = ttk.Scrollbar(tree_frame, orient='vertical', command=self.tree.yview)
         xsb = ttk.Scrollbar(tree_frame, orient='horizontal', command=self.tree.xview)
         self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
@@ -101,7 +107,8 @@ class ActivityViewer(tk.Tk):
 
     def perform_login(self):
         """
-        Handles the login button click.
+        处理登录按钮点击事件
+        获取用户输入的学号和密码，并在新线程中执行登录操作
         """
         username = self.user_entry.get()
         password = self.pass_entry.get()
@@ -118,7 +125,8 @@ class ActivityViewer(tk.Tk):
 
     def _login_thread(self, username, password):
         """
-        Worker thread for logging in.
+        登录操作的工作线程
+        在线程中执行实际的登录请求，避免UI界面冻结
         """
         try:
             success, message = self.client.login(username, password)
@@ -131,6 +139,7 @@ class ActivityViewer(tk.Tk):
     def _handle_login_result(self, success, message):
         """
         处理登录结果
+        根据登录是否成功更新UI状态和显示相应消息
         """
         if success:
             welcome_msg = "登录成功！请点击获取活动列表。"
@@ -143,7 +152,8 @@ class ActivityViewer(tk.Tk):
 
     def start_data_fetch(self):
         """
-        Handles the "Fetch Activities" button click.
+        处理"获取活动列表"按钮点击事件
+        清空现有数据并启动异步获取活动列表的操作
         """
         self.ui_manager.update_status("正在获取活动列表...")
         self.ui_manager.disable_buttons()
@@ -160,12 +170,14 @@ class ActivityViewer(tk.Tk):
     def _handle_fetch_update(self, message):
         """
         处理数据获取过程中的更新消息
+        更新UI状态以显示当前获取进度
         """
         self.after(0, lambda: self.ui_manager.update_status(message))
 
     def _handle_fetch_all_complete(self, success, result, error):
         """
-        处理所有活动数据获取完成
+        处理所有活动数据获取完成事件
+        根据获取结果更新UI和缓存
         """
         if success:
             self.activity_data_cache = result
@@ -186,7 +198,8 @@ class ActivityViewer(tk.Tk):
 
     def fetch_detail_on_double_click(self, event):
         """
-        Handles double-click event on the Treeview to fetch detail for a single activity.
+        处理双击表格事件，用于按需获取单个活动详情
+        当用户双击活动条目时，获取该活动的详细信息
         """
         # 1. 获取选中的行
         item_id = self.tree.focus()
@@ -220,7 +233,8 @@ class ActivityViewer(tk.Tk):
 
     def _handle_fetch_single_complete(self, success, result, error):
         """
-        处理单个活动详情获取完成
+        处理单个活动详情获取完成事件
+        根据获取结果更新缓存数据和表格显示
         """
         if success:
             detail_data = result['detail']
@@ -249,7 +263,5 @@ class ActivityViewer(tk.Tk):
         self.after(0, lambda: self.ui_manager.set_cursor(""))
 
 if __name__ == "__main__":
-    # Ensure you have the required libraries:
-    # pip install requests beautifulsoup4 colorama
     app = ActivityViewer()
     app.mainloop()
