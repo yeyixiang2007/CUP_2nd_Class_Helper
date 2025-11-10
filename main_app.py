@@ -24,7 +24,7 @@ class ActivityViewer(tk.Tk):
         设置窗口标题、大小，初始化客户端和数据缓存等
         """
         super().__init__()
-        self.title("中国石油大学第二课堂活动查询助手")
+        self.title("中国石油大学第二课堂活动查询助手 - github.com/yeyixiang2007")
         self.geometry("1200x700")
         self.configure(bg='white')
 

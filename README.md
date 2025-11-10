@@ -1,6 +1,8 @@
 # 中国石油大学第二课堂活动查询助手
 
 <div align="center">
+  <img src="res/logo.ico" alt="中国石油大学第二课堂活动查询助手" width="120" height="120">
+  <br><br>
   <img src="https://img.shields.io/badge/Python-3.8%2B-blue.svg">
   <img src="https://img.shields.io/badge/Tkinter-GUI-orange.svg">
   <img src="https://img.shields.io/badge/License-MIT-green.svg">
