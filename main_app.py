@@ -199,7 +199,7 @@ class ActivityViewer(tk.Tk):
     def fetch_detail_on_double_click(self, event):
         """
         处理双击表格事件，用于按需获取单个活动详情
-        当用户双击活动条目时，获取该活动的详细信息
+        当用户双击活动条目时，如果详情已加载则复制URL到剪贴板并显示提示，否则获取详情
         """
         # 1. 获取选中的行
         item_id = self.tree.focus()
@@ -216,6 +216,12 @@ class ActivityViewer(tk.Tk):
         activity_info = self.activity_data_cache[selected_index]
 
         if activity_info.get('is_loaded'):
+            # 详情已加载，复制URL到剪贴板
+            if 'url' in activity_info:
+                self.clipboard_clear()
+                self.clipboard_append(config.BASE_URL + activity_info['url'])
+                # 显示提示消息
+                self.show_toast(f"活动URL已复制到剪贴板")
             return
 
         # 4. 未加载，开始按需获取
@@ -256,11 +262,44 @@ class ActivityViewer(tk.Tk):
                 f"{name_prefix}详情获取成功。"
             ))
         else:
-            self.after(0, lambda: self.ui_manager.show_error("Fetch Detail Error", str(error)))
+            self.after(0, lambda: self.ui_manager.show_error("Detail Fetch Error", str(error)))
             self.after(0, lambda: self.ui_manager.update_status(f"获取详情失败: {error}"))
 
-        self.after(0, lambda: self.ui_manager.enable_buttons())
         self.after(0, lambda: self.ui_manager.set_cursor(""))
+        self.after(0, lambda: self.ui_manager.enable_buttons())
+
+    def show_toast(self, message, duration=2000):
+        """
+        显示临时提示消息
+
+        Args:
+            message: 要显示的消息内容
+            duration: 消息显示的时长（毫秒）
+        """
+        toast = tk.Toplevel(self)
+        toast.overrideredirect(True)  # 无边框窗口
+
+        # 设置提示框样式
+        toast.configure(bg='black')
+        label = ttk.Label(
+            toast,
+            text=message,
+            foreground='white',
+            background='black',
+            padding=(20, 10)
+        )
+        label.pack()
+
+        # 计算窗口位置（居中显示）
+        x = (self.winfo_width() // 2) - (toast.winfo_reqwidth() // 2) + self.winfo_x()
+        y = (self.winfo_height() // 3) - (toast.winfo_reqheight() // 2) + self.winfo_y()
+        toast.geometry(f"+{x}+{y}")
+
+        # 设置透明度
+        toast.attributes('-alpha', 0.8)
+
+        # 定时关闭
+        toast.after(duration, toast.destroy)
 
 if __name__ == "__main__":
     app = ActivityViewer()
